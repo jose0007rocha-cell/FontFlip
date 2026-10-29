@@ -44,7 +44,11 @@ class FontViewModel(private val app: Application) : AndroidViewModel(app) {
     private val prefs = app.getSharedPreferences("flip", Context.MODE_PRIVATE)
 
     private val _state = MutableStateFlow(
-        UiState(store.list(), SystemActions.status(app), prefs.getBoolean(BACKUP, false)),
+        UiState(
+            fonts = store.list(),
+            status = SystemActions.status(app),
+            backupDone = prefs.getBoolean(BACKUP, false),
+        ),
     )
     val state: StateFlow<UiState> = _state.asStateFlow()
 

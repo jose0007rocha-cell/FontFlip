@@ -107,28 +107,20 @@ object SystemActions {
         return tryStart(context, Intent(Settings.ACTION_PRIVACY_SETTINGS), Intent(Settings.ACTION_SYNC_SETTINGS))
     }
 
-    private val BACKUP_SCREEN = ComponentName(
-        "com.samsung.android.scloud",
-        "com.samsung.android.scloud.bnr.ui.view.screen.backup.BackupE2EEActivity",
-    )
-    private val RESTORE_SCREEN = ComponentName(
-        "com.samsung.android.scloud",
-        "com.samsung.android.scloud.bnr.ui.view.screen.restore.BackupDeviceListActivity",
-    )
-
-    /** "Backup de dados" direto; se o sistema recusar, cai em "Fazer backup e restaurar". */
-    fun openBackup(context: Context, saved: String?): Boolean {
-        val wizard = restoreCandidates(context).firstOrNull {
-            it.className.substringAfterLast('.') == "SetupWizardRestoreActivity"
-        }
-        return (wizard != null && tryStart(context, Intent().setComponent(wizard))) ||
-            tryStart(context, Intent().setComponent(BACKUP_SCREEN)) ||
-            openBackupRestore(context, saved)
+    /** Abre uma tela exportada pelo nome simples da classe (descoberta no aparelho). */
+    private fun startByName(context: Context, simpleName: String): Boolean {
+        val cn = restoreCandidates(context).firstOrNull { it.className.substringAfterLast('.') == simpleName }
+            ?: return false
+        return tryStart(context, Intent().setComponent(cn))
     }
 
-    /** "Restaurar dados" direto; se o sistema recusar, cai em "Fazer backup e restaurar". */
+    /** Backup: tela "SamsungBackup"; se falhar, "Fazer backup e restaurar". */
+    fun openBackup(context: Context, saved: String?): Boolean =
+        startByName(context, "SamsungBackup") || openBackupRestore(context, saved)
+
+    /** Restauração: tela "SetupWizardRestoreActivity"; se falhar, "Fazer backup e restaurar". */
     fun openRestore(context: Context, saved: String?): Boolean =
-        tryStart(context, Intent().setComponent(RESTORE_SCREEN)) || openBackupRestore(context, saved)
+        startByName(context, "SetupWizardRestoreActivity") || openBackupRestore(context, saved)
 
     /** Teste manual de uma candidata (null = Privacidade padrão do Android). */
     fun openComponent(context: Context, cn: ComponentName?): Boolean =
