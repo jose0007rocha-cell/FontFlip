@@ -1,0 +1,2 @@
+-dontwarn com.android.apksig.**
+-dontwarn java.lang.invoke.StringConcatFactory

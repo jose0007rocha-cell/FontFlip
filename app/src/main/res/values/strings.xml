@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FontFlip</string>
+    <string name="add_font">Adicionar fonte</string>
+    <string name="your_fonts">Suas fontes</string>
+    <string name="empty_fonts">Nenhuma fonte ainda. Toque em “Adicionar fonte” e escolha um arquivo .ttf.</string>
+    <string name="sample_label">Texto de exemplo</string>
+    <string name="sample_default">Um pequeno jabuti xereta viu dez cegonhas felizes.</string>
+    <string name="install">Instalar</string>
+    <string name="remove">Excluir</string>
+
+    <string name="status_none_title">Samsung Sans não encontrada</string>
+    <string name="status_none_body">Instale a Samsung Sans original pela Galaxy Store. Ela é a base para aplicar a sua fonte.</string>
+    <string name="status_original_title">Samsung Sans original instalada</string>
+    <string name="status_original_body">Escolha uma fonte abaixo e toque em Instalar para substituí-la.</string>
+    <string name="status_custom_title">Fonte personalizada instalada</string>
+    <string name="status_custom_body">Abra os ajustes e selecione a fonte padrão e, depois, Samsung Sans.</string>
+    <string name="btn_store">Galaxy Store</string>
+    <string name="btn_font_settings">Ajustes de tela</string>
+    <string name="btn_uninstall">Remover fonte</string>
+
+    <string name="how_title">Como funciona</string>
+    <string name="how_steps">1. Instale a Samsung Sans original (Galaxy Store).\n2. Adicione um .ttf e toque em Instalar: o app troca a Samsung Sans pela sua fonte (desinstala e instala de novo).\n3. Em Ajustes > Tela > Tamanho e estilo da fonte, escolha a fonte padrão e depois Samsung Sans.\n4. Se não aplicar, faça backup das configurações no Samsung Cloud e restaure (conta Samsung conectada).\n\nFeito para One UI 2–3 (Android 10/11). Versões mais novas podem bloquear fontes de terceiros.</string>
+
+    <string name="msg_imported">%1$d fonte(s) importada(s)</string>
+    <string name="msg_uninstall_cancelled">Remoção cancelada</string>
+    <string name="allow_install">Permita instalar apps deste app e toque em Instalar novamente</string>
+    <string name="err_import">Não foi possível importar o arquivo</string>
+    <string name="err_invalid_font">O arquivo não é um TTF válido</string>
+    <string name="err_too_big">Arquivo muito grande (máx. 50 MB)</string>
+    <string name="err_build">Falha ao gerar o APK: %1$s</string>
+    <string name="err_store">Galaxy Store indisponível neste aparelho</string>
+</resources>
