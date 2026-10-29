@@ -17,8 +17,8 @@
     <string name="status_custom_body">Falta aplicar: restaure o backup de “Configurações” no Samsung Cloud.</string>
     <string name="btn_store">Galaxy Store</string>
     <string name="btn_font_settings">Ajustes de tela</string>
-    <string name="btn_restore">Restaurar (Samsung Cloud)</string>
-    <string name="btn_cloud">Abrir Samsung Cloud</string>
+    <string name="btn_restore">Restaurar dados</string>
+    <string name="btn_cloud">Backup e restauração</string>
     <string name="backup_done">Já fiz o backup de Configurações (só uma vez)</string>
     <string name="backup_hint">Com a Samsung Sans selecionada, faça backup só de “Configurações”. Depois disso, cada troca de fonte é: Instalar e Restaurar.</string>
     <string name="toast_restore">Restaure só “Configurações” para aplicar a fonte</string>
@@ -38,4 +38,9 @@
 
     <string name="btn_font_style">Estilo da fonte</string>
     <string name="err_cloud">Não consegui abrir essa tela neste aparelho</string>
+    <string name="pick_screen">Tela errada? Escolher outra</string>
+    <string name="pick_title">Qual tela abriu certo?</string>
+    <string name="pick_hint">Toque numa opção. Quando abrir “Fazer backup e restaurar”, ela fica salva para os próximos botões. Me diga o nome dela e eu fixo no app.</string>
+    <string name="pick_privacy">Privacidade (padrão do Android)</string>
+    <string name="close">Fechar</string>
 </resources>

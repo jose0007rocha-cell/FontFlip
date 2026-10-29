@@ -1,5 +1,6 @@
 package app.fontflip.ui
 
+import android.content.ComponentName
 import android.graphics.Typeface
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -75,6 +77,9 @@ fun FontFlipApp(vm: FontViewModel = viewModel()) {
     val snackbar = remember { SnackbarHostState() }
     var sample by rememberSaveable { mutableStateOf(context.getString(R.string.sample_default)) }
 
+    var showPick by remember { mutableStateOf(false) }
+    val candidates = remember(showPick) { if (showPick) SystemActions.restoreCandidates(context) else emptyList() }
+
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) {
         vm.importFonts(it)
     }
@@ -96,10 +101,23 @@ fun FontFlipApp(vm: FontViewModel = viewModel()) {
                 UiEvent.Uninstall -> uninstaller.launch(SystemActions.uninstallIntent())
                 UiEvent.OpenRestore -> {
                     Toast.makeText(context, context.getString(R.string.toast_restore), Toast.LENGTH_LONG).show()
-                    SystemActions.openSamsungCloud(context)
+                    SystemActions.openBackupRestore(context, vm.restoreTarget())
                 }
             }
         }
+    }
+
+    if (showPick) {
+        PickDialog(
+            candidates = candidates,
+            onPick = { cn ->
+                if (SystemActions.openComponent(context, cn)) {
+                    vm.saveRestoreTarget(cn?.flattenToString() ?: SystemActions.PRIVACY)
+                    Toast.makeText(context, cn?.className ?: context.getString(R.string.pick_privacy), Toast.LENGTH_LONG).show()
+                }
+            },
+            onDismiss = { showPick = false },
+        )
     }
 
     Scaffold(
@@ -139,8 +157,9 @@ fun FontFlipApp(vm: FontViewModel = viewModel()) {
                             scope.launch { snackbar.showSnackbar(context.getString(R.string.err_cloud)) }
                         }
                     },
+                    onPick = { showPick = true },
                     onCloud = {
-                        if (!SystemActions.openSamsungCloud(context)) {
+                        if (!SystemActions.openBackupRestore(context, vm.restoreTarget())) {
                             scope.launch { snackbar.showSnackbar(context.getString(R.string.err_cloud)) }
                         }
                     },
@@ -185,12 +204,35 @@ fun FontFlipApp(vm: FontViewModel = viewModel()) {
 }
 
 @Composable
+private fun PickDialog(
+    candidates: List<ComponentName>,
+    onPick: (ComponentName?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+        title = { Text(stringResource(R.string.pick_title)) },
+        text = {
+            LazyColumn {
+                item { Text(stringResource(R.string.pick_hint), style = MaterialTheme.typography.bodySmall) }
+                item { TextButton(onClick = { onPick(null) }) { Text(stringResource(R.string.pick_privacy)) } }
+                items(candidates) { cn ->
+                    TextButton(onClick = { onPick(cn) }) { Text(cn.className.substringAfterLast('.')) }
+                }
+            }
+        },
+    )
+}
+
+@Composable
 private fun FlowCard(
     status: FontStatus,
     backupDone: Boolean,
     onStore: () -> Unit,
     onFontStyle: () -> Unit,
     onCloud: () -> Unit,
+    onPick: () -> Unit,
     onBackupDone: (Boolean) -> Unit,
     onUninstall: () -> Unit,
 ) {
@@ -235,6 +277,7 @@ private fun FlowCard(
                         OutlinedButton(onClick = onFontStyle) { Text(stringResource(R.string.btn_font_style)) }
                         OutlinedButton(onClick = onCloud) { Text(stringResource(R.string.btn_cloud)) }
                     }
+                    TextButton(onClick = onPick) { Text(stringResource(R.string.pick_screen)) }
                     Row(
                         Modifier.fillMaxWidth().clickable { onBackupDone(true) },
                         verticalAlignment = Alignment.CenterVertically,
@@ -252,7 +295,10 @@ private fun FlowCard(
                         Button(onClick = onCloud) { Text(stringResource(R.string.btn_restore)) }
                         OutlinedButton(onClick = onFontStyle) { Text(stringResource(R.string.btn_font_style)) }
                     }
-                    TextButton(onClick = onUninstall) { Text(stringResource(R.string.btn_uninstall)) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = onPick) { Text(stringResource(R.string.pick_screen)) }
+                        TextButton(onClick = onUninstall) { Text(stringResource(R.string.btn_uninstall)) }
+                    }
                 }
             }
         }

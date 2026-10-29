@@ -60,6 +60,12 @@ class FontViewModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun restoreTarget(): String? = prefs.getString(TARGET, null)
+
+    fun saveRestoreTarget(value: String) {
+        prefs.edit().putString(TARGET, value).apply()
+    }
+
     fun setBackupDone(done: Boolean) {
         prefs.edit().putBoolean(BACKUP, done).apply()
         _state.update { it.copy(backupDone = done) }
@@ -131,3 +137,4 @@ class FontViewModel(private val app: Application) : AndroidViewModel(app) {
 
 private const val BACKUP = "backup_done"
 private const val PENDING = "pending_restore"
+private const val TARGET = "restore_target"

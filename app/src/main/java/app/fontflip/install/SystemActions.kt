@@ -1,5 +1,6 @@
 package app.fontflip.install
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -75,4 +76,40 @@ object SystemActions {
         context.packageManager.getLaunchIntentForPackage("com.samsung.android.scloud") ?: Intent(Settings.ACTION_SYNC_SETTINGS),
         Intent(Settings.ACTION_SYNC_SETTINGS),
     )
+
+    private val GOOD = Regex("backup|restore|privacy", RegexOption.IGNORE_CASE)
+    private val BAD = Regex("reset|erase|wipe|factory|format", RegexOption.IGNORE_CASE)
+
+    /** Telas exportadas do Ajustes / Samsung Cloud cujo nome lembra backup, restauração ou privacidade. */
+    @Suppress("DEPRECATION")
+    fun restoreCandidates(context: Context): List<ComponentName> {
+        val found = linkedSetOf<ComponentName>()
+        for (pkg in listOf("com.android.settings", "com.samsung.android.scloud")) {
+            val info = runCatching {
+                context.packageManager.getPackageInfo(pkg, PackageManager.GET_ACTIVITIES)
+            }.getOrNull() ?: continue
+            info.activities?.forEach {
+                if (it.exported && it.enabled && GOOD.containsMatchIn(it.name) && !BAD.containsMatchIn(it.name)) {
+                    found += ComponentName(it.packageName, it.name)
+                }
+            }
+        }
+        return found.toList()
+    }
+
+    /** Abre a tela "Fazer backup e restaurar": a escolhida antes, ou Privacidade, ou Contas. */
+    fun openBackupRestore(context: Context, saved: String?): Boolean {
+        if (saved != null && saved != PRIVACY) {
+            val cn = ComponentName.unflattenFromString(saved)
+            if (cn != null && tryStart(context, Intent().setComponent(cn))) return true
+        }
+        return tryStart(context, Intent(Settings.ACTION_PRIVACY_SETTINGS), Intent(Settings.ACTION_SYNC_SETTINGS))
+    }
+
+    /** Teste manual de uma candidata (null = Privacidade padrão do Android). */
+    fun openComponent(context: Context, cn: ComponentName?): Boolean =
+        if (cn == null) tryStart(context, Intent(Settings.ACTION_PRIVACY_SETTINGS))
+        else tryStart(context, Intent().setComponent(cn))
+
+    const val PRIVACY = "privacy"
 }

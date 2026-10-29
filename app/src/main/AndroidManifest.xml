@@ -8,6 +8,7 @@
     <queries>
         <package android:name="com.monotype.android.font.samsungsans" />
         <package android:name="com.samsung.android.scloud" />
+        <package android:name="com.android.settings" />
     </queries>
 
     <application
