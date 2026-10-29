@@ -18,7 +18,7 @@
     <string name="btn_store">Galaxy Store</string>
     <string name="btn_font_settings">Ajustes de tela</string>
     <string name="btn_restore">Restaurar dados</string>
-    <string name="btn_cloud">Backup e restauração</string>
+    <string name="btn_cloud">Fazer backup</string>
     <string name="backup_done">Já fiz o backup de Configurações (só uma vez)</string>
     <string name="backup_hint">Com a Samsung Sans selecionada, faça backup só de “Configurações”. Depois disso, cada troca de fonte é: Instalar e Restaurar.</string>
     <string name="toast_restore">Restaure só “Configurações” para aplicar a fonte</string>

@@ -106,6 +106,23 @@ object SystemActions {
         return tryStart(context, Intent(Settings.ACTION_PRIVACY_SETTINGS), Intent(Settings.ACTION_SYNC_SETTINGS))
     }
 
+    private val BACKUP_SCREEN = ComponentName(
+        "com.samsung.android.scloud",
+        "com.samsung.android.scloud.bnr.ui.view.screen.backup.BackupE2EEActivity",
+    )
+    private val RESTORE_SCREEN = ComponentName(
+        "com.samsung.android.scloud",
+        "com.samsung.android.scloud.bnr.ui.view.screen.restore.BackupDeviceListActivity",
+    )
+
+    /** "Backup de dados" direto; se o sistema recusar, cai em "Fazer backup e restaurar". */
+    fun openBackup(context: Context, saved: String?): Boolean =
+        tryStart(context, Intent().setComponent(BACKUP_SCREEN)) || openBackupRestore(context, saved)
+
+    /** "Restaurar dados" direto; se o sistema recusar, cai em "Fazer backup e restaurar". */
+    fun openRestore(context: Context, saved: String?): Boolean =
+        tryStart(context, Intent().setComponent(RESTORE_SCREEN)) || openBackupRestore(context, saved)
+
     /** Teste manual de uma candidata (null = Privacidade padrão do Android). */
     fun openComponent(context: Context, cn: ComponentName?): Boolean =
         if (cn == null) tryStart(context, Intent(Settings.ACTION_PRIVACY_SETTINGS))

@@ -101,7 +101,7 @@ fun FontFlipApp(vm: FontViewModel = viewModel()) {
                 UiEvent.Uninstall -> uninstaller.launch(SystemActions.uninstallIntent())
                 UiEvent.OpenRestore -> {
                     Toast.makeText(context, context.getString(R.string.toast_restore), Toast.LENGTH_LONG).show()
-                    SystemActions.openBackupRestore(context, vm.restoreTarget())
+                    SystemActions.openRestore(context, vm.restoreTarget())
                 }
             }
         }
@@ -158,8 +158,13 @@ fun FontFlipApp(vm: FontViewModel = viewModel()) {
                         }
                     },
                     onPick = { showPick = true },
+                    onRestore = {
+                        if (!SystemActions.openRestore(context, vm.restoreTarget())) {
+                            scope.launch { snackbar.showSnackbar(context.getString(R.string.err_cloud)) }
+                        }
+                    },
                     onCloud = {
-                        if (!SystemActions.openBackupRestore(context, vm.restoreTarget())) {
+                        if (!SystemActions.openBackup(context, vm.restoreTarget())) {
                             scope.launch { snackbar.showSnackbar(context.getString(R.string.err_cloud)) }
                         }
                     },
@@ -232,6 +237,7 @@ private fun FlowCard(
     onStore: () -> Unit,
     onFontStyle: () -> Unit,
     onCloud: () -> Unit,
+    onRestore: () -> Unit,
     onPick: () -> Unit,
     onBackupDone: (Boolean) -> Unit,
     onUninstall: () -> Unit,
@@ -270,14 +276,20 @@ private fun FlowCard(
 
             when {
                 status == FontStatus.NONE ->
-                    Button(onClick = onStore) { Text(stringResource(R.string.btn_store)) }
+                    Button(onClick = onStore, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.btn_store))
+                    }
 
                 !backupDone -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onFontStyle) { Text(stringResource(R.string.btn_font_style)) }
-                        OutlinedButton(onClick = onCloud) { Text(stringResource(R.string.btn_cloud)) }
+                    OutlinedButton(onClick = onCloud, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.btn_cloud))
                     }
-                    TextButton(onClick = onPick) { Text(stringResource(R.string.pick_screen)) }
+                    OutlinedButton(onClick = onFontStyle, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.btn_font_style))
+                    }
+                    TextButton(onClick = onPick, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.pick_screen))
+                    }
                     Row(
                         Modifier.fillMaxWidth().clickable { onBackupDone(true) },
                         verticalAlignment = Alignment.CenterVertically,
@@ -288,16 +300,22 @@ private fun FlowCard(
                 }
 
                 status == FontStatus.ORIGINAL ->
-                    OutlinedButton(onClick = onFontStyle) { Text(stringResource(R.string.btn_font_style)) }
+                    OutlinedButton(onClick = onFontStyle, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.btn_font_style))
+                    }
 
                 else -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = onCloud) { Text(stringResource(R.string.btn_restore)) }
-                        OutlinedButton(onClick = onFontStyle) { Text(stringResource(R.string.btn_font_style)) }
+                    Button(onClick = onRestore, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.btn_restore))
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = onPick) { Text(stringResource(R.string.pick_screen)) }
-                        TextButton(onClick = onUninstall) { Text(stringResource(R.string.btn_uninstall)) }
+                    OutlinedButton(onClick = onFontStyle, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.btn_font_style))
+                    }
+                    TextButton(onClick = onPick, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.pick_screen))
+                    }
+                    TextButton(onClick = onUninstall, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.btn_uninstall))
                     }
                 }
             }
@@ -333,7 +351,7 @@ private fun FontCard(file: File, sample: String, busy: Boolean, onInstall: () ->
                 style = MaterialTheme.typography.headlineSmall.copy(fontFamily = family ?: FontFamily.Default),
                 modifier = Modifier.padding(vertical = 8.dp),
             )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onDelete) {
                     Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
