@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -46,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -92,6 +94,10 @@ fun FontFlipApp(vm: FontViewModel = viewModel()) {
                         scope.launch { snackbar.showSnackbar(context.getString(R.string.allow_install)) }
                     }
                 UiEvent.Uninstall -> uninstaller.launch(SystemActions.uninstallIntent())
+                UiEvent.OpenRestore -> {
+                    Toast.makeText(context, context.getString(R.string.toast_restore), Toast.LENGTH_LONG).show()
+                    SystemActions.openSamsungCloud(context)
+                }
             }
         }
     }
@@ -120,14 +126,25 @@ fun FontFlipApp(vm: FontViewModel = viewModel()) {
             if (state.busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
 
             item {
-                StatusCard(
+                FlowCard(
                     status = state.status,
+                    backupDone = state.backupDone,
                     onStore = {
                         if (!SystemActions.openGalaxyStore(context)) {
                             scope.launch { snackbar.showSnackbar(context.getString(R.string.err_store)) }
                         }
                     },
-                    onSettings = { SystemActions.openDisplaySettings(context) },
+                    onFontStyle = {
+                        if (!SystemActions.openFontStyle(context)) {
+                            scope.launch { snackbar.showSnackbar(context.getString(R.string.err_cloud)) }
+                        }
+                    },
+                    onCloud = {
+                        if (!SystemActions.openSamsungCloud(context)) {
+                            scope.launch { snackbar.showSnackbar(context.getString(R.string.err_cloud)) }
+                        }
+                    },
+                    onBackupDone = vm::setBackupDone,
                     onUninstall = vm::uninstallCurrent,
                 )
             }
@@ -168,32 +185,36 @@ fun FontFlipApp(vm: FontViewModel = viewModel()) {
 }
 
 @Composable
-private fun StatusCard(
+private fun FlowCard(
     status: FontStatus,
+    backupDone: Boolean,
     onStore: () -> Unit,
-    onSettings: () -> Unit,
+    onFontStyle: () -> Unit,
+    onCloud: () -> Unit,
+    onBackupDone: (Boolean) -> Unit,
     onUninstall: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    val container = when (status) {
-        FontStatus.NONE -> colors.errorContainer
-        FontStatus.ORIGINAL -> colors.secondaryContainer
-        FontStatus.CUSTOM -> colors.tertiaryContainer
+    val container = when {
+        status == FontStatus.NONE -> colors.errorContainer
+        status == FontStatus.CUSTOM && backupDone -> colors.tertiaryContainer
+        else -> colors.secondaryContainer
     }
-    val icon = when (status) {
-        FontStatus.NONE -> Icons.Default.Warning
-        FontStatus.ORIGINAL -> Icons.Default.Info
-        FontStatus.CUSTOM -> Icons.Default.CheckCircle
+    val icon = when {
+        status == FontStatus.NONE -> Icons.Default.Warning
+        status == FontStatus.CUSTOM && backupDone -> Icons.Default.CheckCircle
+        else -> Icons.Default.Info
     }
     val title = when (status) {
         FontStatus.NONE -> R.string.status_none_title
         FontStatus.ORIGINAL -> R.string.status_original_title
         FontStatus.CUSTOM -> R.string.status_custom_title
     }
-    val body = when (status) {
-        FontStatus.NONE -> R.string.status_none_body
-        FontStatus.ORIGINAL -> R.string.status_original_body
-        FontStatus.CUSTOM -> R.string.status_custom_body
+    val body = when {
+        status == FontStatus.NONE -> R.string.status_none_body
+        !backupDone -> R.string.backup_hint
+        status == FontStatus.ORIGINAL -> R.string.status_original_body
+        else -> R.string.status_custom_body
     }
 
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = container)) {
@@ -204,14 +225,34 @@ private fun StatusCard(
                 Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
             }
             Text(stringResource(body), style = MaterialTheme.typography.bodyMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (status == FontStatus.NONE) {
+
+            when {
+                status == FontStatus.NONE ->
                     Button(onClick = onStore) { Text(stringResource(R.string.btn_store)) }
-                } else {
-                    Button(onClick = onSettings) { Text(stringResource(R.string.btn_font_settings)) }
+
+                !backupDone -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = onFontStyle) { Text(stringResource(R.string.btn_font_style)) }
+                        OutlinedButton(onClick = onCloud) { Text(stringResource(R.string.btn_cloud)) }
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().clickable { onBackupDone(true) },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = false, onCheckedChange = { onBackupDone(true) })
+                        Text(stringResource(R.string.backup_done), style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
-                if (status == FontStatus.CUSTOM) {
-                    OutlinedButton(onClick = onUninstall) { Text(stringResource(R.string.btn_uninstall)) }
+
+                status == FontStatus.ORIGINAL ->
+                    OutlinedButton(onClick = onFontStyle) { Text(stringResource(R.string.btn_font_style)) }
+
+                else -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = onCloud) { Text(stringResource(R.string.btn_restore)) }
+                        OutlinedButton(onClick = onFontStyle) { Text(stringResource(R.string.btn_font_style)) }
+                    }
+                    TextButton(onClick = onUninstall) { Text(stringResource(R.string.btn_uninstall)) }
                 }
             }
         }

@@ -1,6 +1,7 @@
 package app.fontflip
 
 import android.app.Application
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,18 +26,23 @@ data class UiState(
     val fonts: List<File> = emptyList(),
     val status: FontStatus = FontStatus.NONE,
     val busy: Boolean = false,
+    val backupDone: Boolean = false,
 )
 
 sealed interface UiEvent {
     class Message(val res: Int, val args: List<Any> = emptyList()) : UiEvent
     class Install(val apk: File) : UiEvent
     data object Uninstall : UiEvent
+    data object OpenRestore : UiEvent
 }
 
 class FontViewModel(private val app: Application) : AndroidViewModel(app) {
     private val store = FontStore(app)
+    private val prefs = app.getSharedPreferences("flip", Context.MODE_PRIVATE)
 
-    private val _state = MutableStateFlow(UiState(store.list(), SystemActions.status(app)))
+    private val _state = MutableStateFlow(
+        UiState(store.list(), SystemActions.status(app), prefs.getBoolean(BACKUP, false)),
+    )
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     private val _events = MutableSharedFlow<UiEvent>(extraBufferCapacity = 8)
@@ -45,7 +51,23 @@ class FontViewModel(private val app: Application) : AndroidViewModel(app) {
     private var pendingApk: File? = null
 
     fun refreshStatus() {
-        _state.update { it.copy(status = SystemActions.status(app)) }
+        val status = SystemActions.status(app)
+        _state.update { it.copy(status = status) }
+        // Fonte acabou de ser instalada: leva direto para a restauração.
+        if (status == FontStatus.CUSTOM && prefs.getBoolean(PENDING, false)) {
+            prefs.edit().putBoolean(PENDING, false).apply()
+            _events.tryEmit(UiEvent.OpenRestore)
+        }
+    }
+
+    fun setBackupDone(done: Boolean) {
+        prefs.edit().putBoolean(BACKUP, done).apply()
+        _state.update { it.copy(backupDone = done) }
+    }
+
+    private fun emitInstall(apk: File) {
+        prefs.edit().putBoolean(PENDING, true).apply()
+        _events.tryEmit(UiEvent.Install(apk))
     }
 
     fun importFonts(uris: List<Uri>) {
@@ -74,13 +96,14 @@ class FontViewModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.update { it.copy(busy = true) }
             val result = runCatching { withContext(Dispatchers.IO) { FontApkBuilder.build(app, font) } }
-            _state.update { it.copy(busy = false, status = SystemActions.status(app)) }
+            _state.update { it.copy(busy = false) }
+            refreshStatus()
             result.onFailure {
                 _events.emit(UiEvent.Message(R.string.err_build, listOf(it.message ?: it.javaClass.simpleName)))
             }
             result.onSuccess { apk ->
                 if (_state.value.status == FontStatus.NONE) {
-                    _events.emit(UiEvent.Install(apk))
+                    emitInstall(apk)
                 } else {
                     pendingApk = apk
                     _events.emit(UiEvent.Uninstall)
@@ -99,9 +122,12 @@ class FontViewModel(private val app: Application) : AndroidViewModel(app) {
         val apk = pendingApk ?: return
         pendingApk = null
         if (_state.value.status == FontStatus.NONE) {
-            _events.tryEmit(UiEvent.Install(apk))
+            emitInstall(apk)
         } else {
             _events.tryEmit(UiEvent.Message(R.string.msg_uninstall_cancelled))
         }
     }
 }
+
+private const val BACKUP = "backup_done"
+private const val PENDING = "pending_restore"

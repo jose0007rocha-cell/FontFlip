@@ -53,4 +53,26 @@ object SystemActions {
             context.startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
     }
+
+    private fun tryStart(context: Context, vararg intents: Intent): Boolean {
+        for (intent in intents) {
+            if (runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess) return true
+        }
+        return false
+    }
+
+    /** Tela "Estilo da fonte" da One UI (mesma usada pelo app original). */
+    fun openFontStyle(context: Context): Boolean = tryStart(
+        context,
+        Intent("com.samsung.settings.FontStyleActivity"),
+        Intent().setClassName("com.android.settings", "com.samsung.settings.FontStyleActivity"),
+        Intent(Settings.ACTION_DISPLAY_SETTINGS),
+    )
+
+    /** Abre o app Samsung Cloud (backup/restauração); se não achar, abre contas e sincronização. */
+    fun openSamsungCloud(context: Context): Boolean = tryStart(
+        context,
+        context.packageManager.getLaunchIntentForPackage("com.samsung.android.scloud") ?: Intent(Settings.ACTION_SYNC_SETTINGS),
+        Intent(Settings.ACTION_SYNC_SETTINGS),
+    )
 }
