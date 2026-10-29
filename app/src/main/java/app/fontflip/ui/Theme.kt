@@ -26,19 +26,19 @@ fun FontFlipTheme(content: @Composable () -> Unit) {
         else -> lightColorScheme()
     }
     // A fonte do sistema pode ser larga (monoespaçada) e o texto do Android pode estar ampliado:
-    // limita a escala a 1.0 e usa tamanhos um pouco menores para a tela não estourar.
+    // limita a escala a 1.1 e usa tamanhos um pouco menores para a tela não estourar.
     val density = LocalDensity.current
     val base = Typography()
     val compact = base.copy(
-        headlineSmall = base.headlineSmall.copy(fontSize = 20.sp, lineHeight = 26.sp),
-        titleMedium = base.titleMedium.copy(fontSize = 15.sp, lineHeight = 20.sp),
-        titleSmall = base.titleSmall.copy(fontSize = 13.sp, lineHeight = 18.sp),
-        bodyMedium = base.bodyMedium.copy(fontSize = 13.sp, lineHeight = 18.sp),
-        bodySmall = base.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp),
-        labelLarge = base.labelLarge.copy(fontSize = 13.sp),
-        labelMedium = base.labelMedium.copy(fontSize = 11.sp),
+        headlineSmall = base.headlineSmall.copy(fontSize = 22.sp, lineHeight = 28.sp),
+        titleMedium = base.titleMedium.copy(fontSize = 17.sp, lineHeight = 23.sp),
+        titleSmall = base.titleSmall.copy(fontSize = 15.sp, lineHeight = 20.sp),
+        bodyMedium = base.bodyMedium.copy(fontSize = 15.sp, lineHeight = 21.sp),
+        bodySmall = base.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp),
+        labelLarge = base.labelLarge.copy(fontSize = 15.sp),
+        labelMedium = base.labelMedium.copy(fontSize = 12.sp),
     )
-    CompositionLocalProvider(LocalDensity provides Density(density.density, minOf(density.fontScale, 1f))) {
+    CompositionLocalProvider(LocalDensity provides Density(density.density, minOf(density.fontScale, 1.1f))) {
         MaterialTheme(colorScheme = scheme, typography = compact, content = content)
     }
 }

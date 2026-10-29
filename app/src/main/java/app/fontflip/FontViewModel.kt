@@ -11,6 +11,9 @@ import app.fontflip.install.FontApkBuilder
 import app.fontflip.install.FontStatus
 import app.fontflip.install.SystemActions
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -99,13 +102,20 @@ class FontViewModel(private val app: Application) : AndroidViewModel(app) {
 
     /** Gera o APK; se já existe uma Samsung Sans (assinatura diferente), desinstala antes. */
     fun install(font: File) {
+        if (_state.value.busy) return
         viewModelScope.launch {
             _state.update { it.copy(busy = true) }
-            val result = runCatching { withContext(Dispatchers.IO) { FontApkBuilder.build(app, font) } }
+            val job = async(Dispatchers.IO) { FontApkBuilder.build(app, font) }
+            val result = runCatching { withTimeout(BUILD_TIMEOUT_MS) { job.await() } }
             _state.update { it.copy(busy = false) }
             refreshStatus()
             result.onFailure {
-                _events.emit(UiEvent.Message(R.string.err_build, listOf(it.message ?: it.javaClass.simpleName)))
+                if (it is TimeoutCancellationException) {
+                    job.cancel()
+                    _events.emit(UiEvent.Message(R.string.err_timeout, listOf(FontApkBuilder.stage)))
+                } else {
+                    _events.emit(UiEvent.Message(R.string.err_build, listOf(it.message ?: it.javaClass.simpleName)))
+                }
             }
             result.onSuccess { apk ->
                 if (_state.value.status == FontStatus.NONE) {
@@ -138,3 +148,4 @@ class FontViewModel(private val app: Application) : AndroidViewModel(app) {
 private const val BACKUP = "backup_done"
 private const val PENDING = "pending_restore"
 private const val TARGET = "restore_target"
+private const val BUILD_TIMEOUT_MS = 60_000L

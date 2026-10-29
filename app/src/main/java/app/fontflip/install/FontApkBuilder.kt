@@ -27,6 +27,10 @@ object FontApkBuilder {
     /** Marca no versionName para distinguir a nossa fonte da original. */
     const val VERSION_TAG = "fontflip"
 
+    /** Etapa em andamento; aparece na mensagem se a geração travar. */
+    @Volatile
+    var stage: String = ""
+
     private const val ASSET = "Samsungsans"
     private const val KEY_ALIAS = "fontflip_signing"
     private const val MIN_SDK = 26
@@ -36,6 +40,7 @@ object FontApkBuilder {
             mkdirs()
             listFiles()?.forEach { it.delete() }
         }
+        stage = "montando o APK"
         val unsigned = File(dir, "font_unsigned.apk")
         val signed = File(dir, "font.apk")
 
@@ -47,7 +52,10 @@ object FontApkBuilder {
             zip.closeEntry()
         }
 
-        ApkSigner.Builder(listOf(signerConfig()))
+        stage = "chave de assinatura"
+        val config = signerConfig()
+        stage = "assinando"
+        ApkSigner.Builder(listOf(config))
             .setInputApk(unsigned)
             .setOutputApk(signed)
             .setMinSdkVersion(MIN_SDK)
@@ -58,6 +66,7 @@ object FontApkBuilder {
             .sign()
         unsigned.delete()
 
+        stage = "verificando"
         val result = ApkVerifier.Builder(signed).setMinCheckedPlatformVersion(MIN_SDK).build().verify()
         check(result.isVerified) { "assinatura inválida: ${result.errors.joinToString()}" }
         return signed

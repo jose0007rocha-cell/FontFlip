@@ -65,6 +65,7 @@ object SystemActions {
     /** Tela "Estilo da fonte" da One UI (mesma usada pelo app original). */
     fun openFontStyle(context: Context): Boolean = tryStart(
         context,
+        Intent().setClassName("com.android.settings", "com.android.settings.Settings\$SecFontStyleActivity"),
         Intent("com.samsung.settings.FontStyleActivity"),
         Intent().setClassName("com.android.settings", "com.samsung.settings.FontStyleActivity"),
         Intent(Settings.ACTION_DISPLAY_SETTINGS),
@@ -116,8 +117,14 @@ object SystemActions {
     )
 
     /** "Backup de dados" direto; se o sistema recusar, cai em "Fazer backup e restaurar". */
-    fun openBackup(context: Context, saved: String?): Boolean =
-        tryStart(context, Intent().setComponent(BACKUP_SCREEN)) || openBackupRestore(context, saved)
+    fun openBackup(context: Context, saved: String?): Boolean {
+        val wizard = restoreCandidates(context).firstOrNull {
+            it.className.substringAfterLast('.') == "SetupWizardRestoreActivity"
+        }
+        return (wizard != null && tryStart(context, Intent().setComponent(wizard))) ||
+            tryStart(context, Intent().setComponent(BACKUP_SCREEN)) ||
+            openBackupRestore(context, saved)
+    }
 
     /** "Restaurar dados" direto; se o sistema recusar, cai em "Fazer backup e restaurar". */
     fun openRestore(context: Context, saved: String?): Boolean =
